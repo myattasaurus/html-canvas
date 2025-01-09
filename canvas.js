@@ -1,72 +1,75 @@
-
-let canvas;
-
-let screen = {
-    mouse: {
-        menuVisible: false,
-        x: null,
-        y: null,
-        isDown: false
-    },
-    rectangle: {
-        menuVisible: false
+class Canvas {
+    constructor(element) {
+        this.element = element;
+        this.element.width = 800;
+        this.element.height = 600;
     }
 }
 
+class Menu {
+    constructor(element) {
+        this.element = element;
+        this.visible = false;
+    }
+
+    hide() {
+        this.element.innerHTML = '';
+    }
+
+    toggle() {
+        this.visible = !this.visible;
+        if (this.visible) {
+            this.show();
+        } else {
+            this.hide();
+        }
+    }
+}
+
+class MouseMenu extends Menu {
+
+    show() {
+        let menu = '<table>';
+
+        menu += '<tr><td>x</td><td id="x"></td></tr>';
+        menu += '<tr><td>y</td><td id="y"></td></tr>';
+
+        menu += '</table>';
+
+        this.element.innerHTML = menu;
+    }
+
+    onMouseMove(mouseEvent) {
+        if (this.visible) {
+            document.getElementById('x').innerHTML = mouseEvent.offsetX;
+            document.getElementById('y').innerHTML = mouseEvent.offsetY;
+        }
+    }
+}
+
+class Screen {
+    constructor() {
+        this.canvas = new Canvas(document.getElementById('canvas'));
+
+        this.mouseMenu = new MouseMenu(document.getElementById('mouse'));
+
+        this.canvas.element.addEventListener('mousemove', (e) => this.mouseMenu.onMouseMove(e));
+    }
+
+    tick() {
+
+    }
+}
+
+let screen;
+
 function onLoad() {
-    canvas = document.getElementById('canvas');
-
-    canvas.height = 600;
-    canvas.width = 800;
-
-    canvas.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup', onMouseUp);
+    screen = new Screen();
 
     requestAnimationFrame(tick);
 }
 
-function onClickMouse() {
-    screen.mouse.menuVisible = !screen.mouse.menuVisible;
-}
-
-function onMouseMove(mouseEvent) {
-    screen.mouse.x = mouseEvent.offsetX;
-    screen.mouse.y = mouseEvent.offsetY;
-}
-
-function onMouseDown(mouseEvent) {
-    screen.mouse.isDown = true;
-}
-
-function onMouseUp(mouseEvent) {
-    screen.mouse.isDown = false;
-}
-
-function showMouseMenu() {
-    let menu = '<table>';
-
-    menu += row('x', screen.mouse.x);
-    menu += row('y', screen.mouse.y);
-    menu += row('isDown', screen.mouse.isDown);
-
-    menu += '</table>';
-    document.getElementById('mouse').innerHTML = menu;
-}
-
-function hideMouseMenu() {
-    document.getElementById('mouse').innerHTML = '';
-}
-
-function row(key, value) {
-    return '<tr><td>' + key + '</td><td>' + value + '</td></tr>';
-}
-
 function tick(timestamp) {
-    if (screen.mouse.menuVisible) {
-        showMouseMenu();
-    } else {
-        hideMouseMenu();
-    }
+    screen.tick();
     requestAnimationFrame(tick);
 }
