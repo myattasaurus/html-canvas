@@ -60,7 +60,7 @@ class MouseMenu extends Menu {
     }
 }
 
-class Rectangle {
+class Square {
 
     constructor(canvas) {
         canvas.element.addEventListener('mousedown', (e) => this.onMouseDown(e));
@@ -88,23 +88,29 @@ class Rectangle {
     }
 
     draw(context) {
-        context.fillRect(this.left, this.top, this.width, this.height);
+        context.fillRect(this.left, this.top, this.side, this.side);
     }
 
     get left() {
-        return Math.min(this.initialX, this.finalX);
+        if (this.initialX > this.finalX) {
+            return this.initialX - this.side;
+        } else {
+            return this.initialX;
+        }
     }
 
     get top() {
-        return Math.min(this.initialY, this.finalY);
+        if (this.initialY > this.finalY) {
+            return this.initialY - this.side;
+        } else {
+            return this.initialY;
+        }
     }
 
-    get width() {
-        return Math.abs(this.initialX - this.finalX);
-    }
-
-    get height() {
-        return Math.abs(this.initialY - this.finalY);
+    get side() {
+        let width = Math.abs(this.initialX - this.finalX);
+        let height = Math.abs(this.initialY - this.finalY);
+        return Math.min(width, height);
     }
 }
 
@@ -114,7 +120,7 @@ class Screen {
 
         this.mouseMenu = new MouseMenu(document.getElementById('mouse'), this.canvas);
 
-        this.rectangle = new Rectangle(this.canvas);
+        this.rectangle = new Square(this.canvas);
     }
 
     tick() {
