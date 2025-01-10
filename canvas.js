@@ -60,9 +60,32 @@ class MouseMenu extends Menu {
     }
 }
 
+class RectangleMenu extends Menu {
+
+    constructor(element, rectangle) {
+        super(element);
+
+        this.colorPicker = document.createElement('input');
+        this.colorPicker.type = 'color';
+        this.colorPicker.addEventListener('input', (e) => this.onChange(e));
+
+        this.rectangle = rectangle;
+    }
+
+    show() {
+        document.getElementById('rectangle').append(this.colorPicker);
+    }
+
+    onChange(e) {
+        this.rectangle.color = e.srcElement.value;
+    }
+}
+
 class Square {
 
     constructor(canvas) {
+        this.color = 'red';
+
         canvas.element.addEventListener('mousedown', (e) => this.onMouseDown(e));
         canvas.element.addEventListener('mouseup', (e) => this.onMouseUp(e));
         canvas.element.addEventListener('mousemove', (e) => this.onMouseMove(e));
@@ -88,6 +111,7 @@ class Square {
     }
 
     draw(context) {
+        context.fillStyle = this.color;
         context.fillRect(this.left, this.top, this.side, this.side);
     }
 
@@ -121,6 +145,8 @@ class Screen {
         this.mouseMenu = new MouseMenu(document.getElementById('mouse'), this.canvas);
 
         this.rectangle = new Square(this.canvas);
+        this.rectangleMenu = new RectangleMenu(document.getElementById('rectangle'), this.rectangle);
+
     }
 
     tick() {
