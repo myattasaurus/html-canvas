@@ -16,7 +16,8 @@ class Canvas {
         this.id = element.id;
     }
 }
-let sqrt2reciprocal = 1 / Math.sqrt(2);
+let sqrt2 = Math.sqrt(2);
+let sqrt2reciprocal = 1 / sqrt2;
 let gameArea;
 let cursor;
 let square;
@@ -36,6 +37,8 @@ function onLoad() {
         cursor: new Canvas(document.getElementById('cursor')),
     };
     gameArea = {
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2,
         width: window.innerWidth,
         height: window.innerHeight
     };
@@ -126,15 +129,56 @@ function onLoad() {
     // Spawn a square
     enemies = [];
     {
+        let speed = 80;
         let width = randomWidth(30, 71);
+        let spawnRect = {
+            width: gameArea.width + width * sqrt2,
+            height: gameArea.height + width * sqrt2
+        };
+        let spawnLength = Math.random() * (2 * spawnRect.width + 2 * spawnRect.height);
+        let spawnPoint;
+        if (spawnLength <= spawnRect.width) {
+            // Spawn along the top
+            spawnPoint = {
+                x: spawnLength,
+                y: -width * sqrt2reciprocal,
+                dx: 0,
+                dy: speed
+            };
+        } else if (spawnLength <= spawnRect.width + spawnRect.height) {
+            // Spawn on the right
+            spawnPoint = {
+                x: gameArea.width + width * sqrt2reciprocal,
+                y: spawnLength - spawnRect.width,
+                dx: -speed,
+                dy: 0
+            };
+        } else if (spawnLength <= 2 * spawnRect.width + spawnRect.height) {
+            // Spawn on the bottom
+            spawnPoint = {
+                x: spawnLength - spawnRect.width - spawnRect.height,
+                y: gameArea.height + width * sqrt2reciprocal,
+                dx: 0,
+                dy: -speed
+            };
+        } else {
+            // Spawn on the left
+            spawnPoint = {
+                x: -width * sqrt2reciprocal,
+                y: spawnLength - 2 * spawnRect.width - spawnRect.height,
+                dx: speed,
+                dy: 0
+            };
+        }
+        console.log(spawnPoint);
         square = {
             color: 'red',
             width: width,
-            x: -width * sqrt2reciprocal,
-            y: 500,
+            x: spawnPoint.x,
+            y: spawnPoint.y,
             theta: 0,
-            dx: 80, // pixels per second
-            dy: 0, // pixels per second
+            dx: spawnPoint.dx, // pixels per second
+            dy: spawnPoint.dy, // pixels per second
             dTheta: 0.4,
             despawn: false,
         };
@@ -177,7 +221,7 @@ function moveSquare(square, dSeconds) {
     square.theta += square.dTheta * dSeconds;
 
     // Despawn
-    let centerToCornerDistance = square.width * sqrt2reciprocal;
+    let centerToCornerDistance = square.width * sqrt2reciprocal + 5;
     square.despawn = square.x > gameArea.width + centerToCornerDistance // outside right of game area
         || square.x < -centerToCornerDistance // outside left of game area
         || square.y > gameArea.height + centerToCornerDistance // outside bottom of game area
