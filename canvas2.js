@@ -20,7 +20,6 @@ let sqrt2 = Math.sqrt(2);
 let sqrt2reciprocal = 1 / sqrt2;
 let gameArea;
 let cursor;
-let square;
 let enemies;
 let spawnTimestamp = Date.now() - 5000;
 
@@ -242,8 +241,8 @@ function drawFrame() {
     let dMillis = frameTimestamp - previousFrameTimestamp;
     let dSeconds = dMillis / 1000;
 
-    // Spawn a square every half second
-    if (spawnTimestamp + 50 < frameTimestamp) {
+    // Spawn a square at some frequency
+    if (spawnTimestamp + 100 < frameTimestamp) {
         spawnTimestamp = frameTimestamp;
         let speed = randomInt(40, 81);
         let width = randomWidth(30, 101);
@@ -257,44 +256,48 @@ function drawFrame() {
             // Spawn along the top
             spawnPoint = {
                 x: spawnLength,
-                y: -width * sqrt2reciprocal,
-                dx: 0,
-                dy: speed
+                y: -width * sqrt2reciprocal
             };
         } else if (spawnLength <= spawnRect.width + spawnRect.height) {
             // Spawn on the right
             spawnPoint = {
                 x: gameArea.width + width * sqrt2reciprocal,
-                y: spawnLength - spawnRect.width,
-                dx: -speed,
-                dy: 0
+                y: spawnLength - spawnRect.width
             };
         } else if (spawnLength <= 2 * spawnRect.width + spawnRect.height) {
             // Spawn on the bottom
             spawnPoint = {
                 x: spawnLength - spawnRect.width - spawnRect.height,
-                y: gameArea.height + width * sqrt2reciprocal,
-                dx: 0,
-                dy: -speed
+                y: gameArea.height + width * sqrt2reciprocal
             };
         } else {
             // Spawn on the left
             spawnPoint = {
                 x: -width * sqrt2reciprocal,
-                y: spawnLength - 2 * spawnRect.width - spawnRect.height,
-                dx: speed,
-                dy: 0
+                y: spawnLength - 2 * spawnRect.width - spawnRect.height
             };
         }
+        // Calculate direction
+        let vector = {
+            x: gameArea.x - spawnPoint.x,
+            y: gameArea.y - spawnPoint.y
+        };
+        let magnitude = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+
+        // Scale the speed
+        let dx = vector.x * speed / magnitude;
+        let dy = vector.y * speed / magnitude;
+
+        // Square to spawn
         let square = {
             color: `rgb(${randomInt(0, 256)},${randomInt(0, 256)},${randomInt(0, 256)})`,
             width: width,
             x: spawnPoint.x,
             y: spawnPoint.y,
             theta: 0,
-            dx: spawnPoint.dx, // pixels per second
-            dy: spawnPoint.dy, // pixels per second
-            dTheta: 0.4,
+            dx: dx, // pixels per second
+            dy: dy, // pixels per second
+            dTheta: 0.5,
             despawn: false,
         };
         updateSquare(square);
