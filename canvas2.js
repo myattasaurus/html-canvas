@@ -28,7 +28,7 @@ let spawnTimestamp = Date.now() - 5000;
 let canvas;
 let gameState;
 
-function onLoad() {
+document.addEventListener('DOMContentLoaded', e => {
     // Initialize all canvases
     canvas = {
         static: new Canvas(document.getElementById('static')),
@@ -56,86 +56,7 @@ function onLoad() {
             localStorage.setItem('gameState', JSON.stringify(gameState));
         }
     });
-    // Initialize cursor
-    {
-        let bgColor = 'rgba(47, 71, 77, 0.2)';
-        let width = 100;
-        let centerSquareColor = 'white';
-        let centerSquareWidth = 8;
-        let cornerColor = 'rgb(77, 160, 179)';
-        let cornerPulseColor = 'white';
-        let cornerWidth = 12;
-
-        cursor = {
-            visible: true,
-            x: 0,
-            y: 0,
-            width: width,
-            outerSquare: {
-                color: bgColor,
-                width: width
-            },
-            innerSquare: {
-                color: bgColor
-            },
-            centerSquare: {
-                color: centerSquareColor,
-                width: centerSquareWidth
-            },
-            cornerSquares: [],
-        };
-        for (let i = 0; i < 4; i++) {
-            cursor.cornerSquares.push({
-                defaultColor: cornerColor,
-                pulseColor: cornerPulseColor,
-                color: cornerColor,
-                width: cornerWidth
-            });
-        }
-        normalizeCursor(cursor);
-    }
-    // Canvas behavior
-    {
-        canvas.cursor.element.addEventListener('mouseenter', e => {
-            cursor.visible = true;
-        });
-        canvas.cursor.element.addEventListener('mousedown', e => {
-            clear(canvas.cursor);
-            // Grow cursor
-            for (let cornerSquare of cursor.cornerSquares) {
-                cornerSquare.color = cornerSquare.pulseColor;
-            }
-            cursor.outerSquare.width = cursor.width + Math.ceil(0.1 * cursor.width);
-            cursor.outerSquare.width += cursor.outerSquare.width % 2;
-            normalizeCursor(cursor);
-            updateCursor(cursor, e);
-            drawCursor(canvas.cursor.brush, cursor);
-        });
-        canvas.cursor.element.addEventListener('mouseup', e => {
-            clear(canvas.cursor);
-            // Shrink cursor
-            for (let cornerSquare of cursor.cornerSquares) {
-                cornerSquare.color = cornerSquare.defaultColor;
-            }
-            cursor.outerSquare.width = cursor.width;
-            normalizeCursor(cursor);
-            updateCursor(cursor, e);
-            drawCursor(canvas.cursor.brush, cursor);
-        });
-        canvas.cursor.element.addEventListener('mousemove', e => {
-            // Cursor
-            {
-                clear(canvas.cursor);
-                updateCursor(cursor, e);
-                drawCursor(canvas.cursor.brush, cursor);
-            }
-        });
-        canvas.cursor.element.addEventListener('mouseleave', e => {
-            // Cursor
-            cursor.visible = false;
-            clear(canvas.cursor);
-        });
-    }
+    initializeCursor(document.getElementById('cursor'));
 
     gameState = {
         enemies: [],
@@ -143,13 +64,10 @@ function onLoad() {
     };
     // Start animation
     requestAnimationFrame(drawFrame);
-}
+});
 
-/**
- * @param {Canvas} canvas 
- */
-function clear(canvas) {
-    canvas.brush.clearRect(0, 0, canvas.element.width, canvas.element.height);
+function clear(canvas, brush) {
+    brush.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function moveSquare(square, dSeconds) {
@@ -180,6 +98,87 @@ function updateSquare(square, x = square.x, y = square.y) {
 function drawSquare(brush, square) {
     brush.fillStyle = square.color;
     brush.fillRect(square.left, square.top, square.width, square.width);
+}
+/**
+ * @param {HTMLCanvasElement} canvas
+ */
+function initializeCursor(canvas) {
+    // Canvas
+    {
+        /**
+         * @type {CanvasRenderingContext2D}
+         */
+        let brush = canvas.getContext('2d');
+        canvas.style = 'cursor:none';
+
+        // Behavior
+        canvas.addEventListener('mousedown', e => {
+            clear(canvas, brush);
+            for (let cornerSquare of cursor.cornerSquares) {
+                cornerSquare.color = cornerSquare.pulseColor;
+            }
+            cursor.outerSquare.width = cursor.width + Math.ceil(0.1 * cursor.width);
+            cursor.outerSquare.width += cursor.outerSquare.width % 2;
+            normalizeCursor(cursor);
+            updateCursor(cursor, e);
+            drawCursor(cursor, brush);
+        });
+        canvas.addEventListener('mouseup', e => {
+            clear(canvas, brush);
+            for (let cornerSquare of cursor.cornerSquares) {
+                cornerSquare.color = cornerSquare.defaultColor;
+            }
+            cursor.outerSquare.width = cursor.width;
+            normalizeCursor(cursor);
+            updateCursor(cursor, e);
+            drawCursor(cursor, brush);
+        });
+        canvas.addEventListener('mousemove', e => {
+            clear(canvas, brush);
+            updateCursor(cursor, e);
+            drawCursor(cursor, brush);
+        });
+        canvas.addEventListener('mouseleave', e => {
+            clear(canvas, brush);
+        });
+    }
+    // Struct
+    {
+        let bgColor = 'rgba(47, 71, 77, 0.2)';
+        let width = 100;
+        let centerSquareColor = 'white';
+        let centerSquareWidth = 8;
+        let cornerColor = 'rgb(77, 160, 179)';
+        let cornerPulseColor = 'white';
+        let cornerWidth = 12;
+
+        cursor = {
+            x: 0,
+            y: 0,
+            width: width,
+            outerSquare: {
+                color: bgColor,
+                width: width
+            },
+            innerSquare: {
+                color: bgColor
+            },
+            centerSquare: {
+                color: centerSquareColor,
+                width: centerSquareWidth
+            },
+            cornerSquares: [],
+        };
+        for (let i = 0; i < 4; i++) {
+            cursor.cornerSquares.push({
+                defaultColor: cornerColor,
+                pulseColor: cornerPulseColor,
+                color: cornerColor,
+                width: cornerWidth
+            });
+        }
+        normalizeCursor(cursor);
+    }
 }
 
 let xOperation = [-1, -1, 1, 1];
@@ -213,23 +212,21 @@ function updateCursor(cursor, e) {
     updateSquare(cursor.centerSquare, cursor.x, cursor.y);
 }
 
-function drawCursor(brush, cursor) {
-    if (cursor.visible) {
-        // Outer square
-        drawSquare(brush, cursor.outerSquare);
+function drawCursor(cursor, brush) {
+    // Outer square
+    drawSquare(brush, cursor.outerSquare);
 
-        // Corner squares
-        for (let cornerSquare of cursor.cornerSquares) {
-            drawSquare(brush, cornerSquare);
-        }
-
-        // Inner square
-        brush.clearRect(cursor.innerSquare.left, cursor.innerSquare.top, cursor.innerSquare.width, cursor.innerSquare.width);
-        drawSquare(brush, cursor.innerSquare);
-
-        // Middle square
-        drawSquare(brush, cursor.centerSquare);
+    // Corner squares
+    for (let cornerSquare of cursor.cornerSquares) {
+        drawSquare(brush, cornerSquare);
     }
+
+    // Inner square
+    brush.clearRect(cursor.innerSquare.left, cursor.innerSquare.top, cursor.innerSquare.width, cursor.innerSquare.width);
+    drawSquare(brush, cursor.innerSquare);
+
+    // Middle square
+    drawSquare(brush, cursor.centerSquare);
 }
 
 function randomInt(minInclusive, maxExclusive) {
@@ -323,7 +320,7 @@ function drawFrame() {
     gameState.enemies = gameState.enemies.filter(enemy => !enemy.despawn);
 
     // Draw
-    clear(canvas.dynamic);
+    clear(canvas.dynamic.element, canvas.dynamic.brush);
     for (let enemy of gameState.enemies) {
         let brush = canvas.dynamic.brush;
         brush.save();
