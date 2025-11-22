@@ -17,6 +17,7 @@ class Canvas {
     }
 }
 let sqrt2reciprocal = 1 / Math.sqrt(2);
+let gameArea;
 let cursor;
 let square;
 let enemies;
@@ -33,15 +34,19 @@ function onLoad() {
         static: new Canvas(document.getElementById('static')),
         dynamic: new Canvas(document.getElementById('dynamic')),
         cursor: new Canvas(document.getElementById('cursor')),
-    }
+    };
+    gameArea = {
+        width: window.innerWidth,
+        height: window.innerHeight
+    };
     window.addEventListener('resize', e => {
-        canvas.static.element.width = canvas.dynamic.element.width = canvas.cursor.element.width = window.innerWidth;
-        canvas.static.element.height = canvas.dynamic.element.height = canvas.cursor.element.height = window.innerHeight
+        canvas.static.element.width = canvas.dynamic.element.width = canvas.cursor.element.width = gameArea.width = window.innerWidth;
+        canvas.static.element.height = canvas.dynamic.element.height = canvas.cursor.element.height = gameArea.height = window.innerHeight;
     })
     // Initialize cursor
     {
         let bgColor = 'rgba(47, 71, 77, 0.2)';
-        let width = 90;
+        let width = 100;
         let centerSquareColor = 'white';
         let centerSquareWidth = 8;
         let cornerColor = 'rgb(77, 160, 179)';
@@ -121,30 +126,30 @@ function onLoad() {
     // Spawn a square
     enemies = [];
     {
-        let width = 70;
+        let width = randomWidth(30, 71);
         square = {
             color: 'red',
             width: width,
             x: -width * sqrt2reciprocal,
-            y: 100,
+            y: 500,
             theta: 0,
-            dx: 40, // pixels per second
-            dy: 10, // pixels per second
-            dTheta: 0.3,
+            dx: 80, // pixels per second
+            dy: 0, // pixels per second
+            dTheta: 0.4,
         };
         updateSquare(square);
         enemies.push(square);
 
-        width = 50;
+        width = randomWidth(30, 71);;
         square = {
-            color: 'rgb(55, 114, 173)',
+            color: 'red',
             width: width,
             x: 700,
             y: -width * sqrt2reciprocal,
             theta: 0,
-            dx: 5, // pixels per second
-            dy: 40, // pixels per second
-            dTheta: -0.5,
+            dx: 0, // pixels per second
+            dy: 80, // pixels per second
+            dTheta: -0.4,
         };
         updateSquare(square);
         enemies.push(square);
@@ -171,8 +176,8 @@ function moveSquare(square, dSeconds) {
 function updateSquare(square, x = square.x, y = square.y) {
     square.x = x;
     square.y = y;
-    square.left = x - square.width / 2;
-    square.top = y - square.width / 2;
+    square.left = square.x - square.width / 2;
+    square.top = square.y - square.width / 2;
 }
 
 function drawSquare(brush, square) {
@@ -228,6 +233,18 @@ function drawCursor(brush, cursor) {
         // Middle square
         drawSquare(brush, cursor.centerSquare);
     }
+}
+
+/**
+ * Provides a random number in the range. The number will be even.
+ * @param {number} minInclusive 
+ * @param {number} maxNotInclusive 
+ * @returns 
+ */
+function randomWidth(minInclusive, maxNotInclusive) {
+    let randomInt = Math.floor(Math.random() * (maxNotInclusive - minInclusive + 2)) + minInclusive;
+    randomInt -= randomInt % 2;
+    return randomInt;
 }
 
 function drawFrame() {
