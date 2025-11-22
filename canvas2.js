@@ -1,70 +1,55 @@
-class Canvas {
-    constructor(element, width = window.innerWidth, height = window.innerHeight) {
-        /**
-         * @type {HTMLCanvasElement} element 
-         */
-        this.element = element;
-        this.element.width = width;
-        this.element.height = height;
-        /**
-         * @type {CanvasRenderingContext2D}
-         */
-        this.brush = this.element.getContext('2d');
-        /**
-         * @type {string} element 
-         */
-        this.id = element.id;
-    }
-}
+let twoPi = 2 * Math.PI;
 let sqrt2 = Math.sqrt(2);
 let sqrt2reciprocal = 1 / sqrt2;
-let gameArea;
-let cursor;
-let spawnTimestamp = Date.now() - 5000;
 
-/**
- * @type {Array<Canvas>}
- */
-let canvas;
-let gameState;
+let gameArea = {};
+let gameState = {};
 
 document.addEventListener('DOMContentLoaded', e => {
-    // Initialize all canvases
-    canvas = {
-        static: new Canvas(document.getElementById('static')),
-        dynamic: new Canvas(document.getElementById('dynamic')),
-        cursor: new Canvas(document.getElementById('cursor')),
-    };
-    gameArea = {
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2,
-        width: window.innerWidth,
-        height: window.innerHeight
-    };
-    window.addEventListener('resize', e => {
-        canvas.static.element.width = canvas.dynamic.element.width = canvas.cursor.element.width = gameArea.width = window.innerWidth;
-        canvas.static.element.height = canvas.dynamic.element.height = canvas.cursor.element.height = gameArea.height = window.innerHeight;
-        gameArea.x = gameArea.width / 2;
-        gameArea.y = gameArea.height / 2;
-    });
-    document.addEventListener('visibilitychange', e => {
-        if (!document.hidden) {
-            gameState = JSON.parse(localStorage.getItem('gameState'));
-            gameState.previousFrameTimestamp = Date.now();
-            requestAnimationFrame(drawFrame);
-        } else {
-            localStorage.setItem('gameState', JSON.stringify(gameState));
-        }
-    });
+    initializeGameArea(gameArea);
     initializeCursor(document.getElementById('cursor'));
+    initializeGameState(gameState);
 
-    gameState = {
-        enemies: [],
-        previousFrameTimestamp: Date.now()
-    };
     // Start animation
     requestAnimationFrame(drawFrame);
 });
+
+function initializeGameArea(gameArea) {
+    let canvases = document.getElementsByTagName('canvas');
+    resize(canvases, gameArea);
+    window.addEventListener('resize', e => {
+        resize(canvases, gameArea);
+    });
+}
+
+function resize(canvases, gameArea) {
+    for (let i = 0; i < canvases.length; i++) {
+        let canvas = canvases.item(i);
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    gameArea.x = window.innerWidth / 2;
+    gameArea.y = window.innerHeight / 2;
+    gameArea.width = window.innerWidth;
+    gameArea.height = window.innerHeight;
+}
+
+function initializeGameState(gameState) {
+    gameState.enemies = [];
+    gameState.previousFrameTimestamp = Date.now();
+    gameState.spawnTimestamp = Date.now() - 5000;
+
+    document.addEventListener('visibilitychange', e => {
+        if (!document.hidden) {
+            Object.assign(gameState, JSON.parse(localStorage.gameState));
+            gameState.previousFrameTimestamp = Date.now();
+            requestAnimationFrame(drawFrame);
+        } else {
+            localStorage.gameState = JSON.stringify(gameState);
+        }
+    });
+}
 
 function clear(canvas, brush) {
     brush.clearRect(0, 0, canvas.width, canvas.height);
@@ -76,7 +61,7 @@ function moveSquare(square, dSeconds) {
     square.y += square.dy * dSeconds;
 
     // Rotate
-    square.theta += square.dTheta * dSeconds;
+    square.theta += (square.dTheta * dSeconds) % twoPi;
 
     // Despawn
     let centerToCornerDistance = square.width * sqrt2reciprocal + 5;
@@ -103,6 +88,7 @@ function drawSquare(brush, square) {
  * @param {HTMLCanvasElement} canvas
  */
 function initializeCursor(canvas) {
+    let cursor;
     // Canvas
     {
         /**
@@ -251,8 +237,8 @@ function drawFrame() {
     let dSeconds = dMillis / 1000;
 
     // Spawn a square at some frequency
-    if (spawnTimestamp + 100 < frameTimestamp) {
-        spawnTimestamp = frameTimestamp;
+    if (gameState.spawnTimestamp + 100 < frameTimestamp) {
+        gameState.spawnTimestamp = frameTimestamp;
         let speed = randomInt(40, 81);
         let width = randomWidth(30, 101);
         let spawnRect = {
@@ -320,9 +306,10 @@ function drawFrame() {
     gameState.enemies = gameState.enemies.filter(enemy => !enemy.despawn);
 
     // Draw
-    clear(canvas.dynamic.element, canvas.dynamic.brush);
+    let canvas = document.getElementById('dynamic');
+    let brush = canvas.getContext('2d');
+    clear(canvas, brush);
     for (let enemy of gameState.enemies) {
-        let brush = canvas.dynamic.brush;
         brush.save();
 
         brush.translate(enemy.x, enemy.y);
