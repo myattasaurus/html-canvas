@@ -136,6 +136,7 @@ function onLoad() {
             dx: 80, // pixels per second
             dy: 0, // pixels per second
             dTheta: 0.4,
+            despawn: false,
         };
         updateSquare(square);
         enemies.push(square);
@@ -150,6 +151,7 @@ function onLoad() {
             dx: 0, // pixels per second
             dy: 80, // pixels per second
             dTheta: -0.4,
+            despawn: false,
         };
         updateSquare(square);
         enemies.push(square);
@@ -167,9 +169,20 @@ function clear(canvas) {
 }
 
 function moveSquare(square, dSeconds) {
+    // Translate
     square.x += square.dx * dSeconds;
     square.y += square.dy * dSeconds;
+
+    // Rotate
     square.theta += square.dTheta * dSeconds;
+
+    // Despawn
+    let centerToCornerDistance = square.width * sqrt2reciprocal;
+    square.despawn = square.x > gameArea.width + centerToCornerDistance // outside right of game area
+        || square.x < -centerToCornerDistance // outside left of game area
+        || square.y > gameArea.height + centerToCornerDistance // outside bottom of game area
+        || square.y < -centerToCornerDistance // outside top of game area
+
     updateSquare(square);
 }
 
@@ -256,6 +269,7 @@ function drawFrame() {
     for (let enemy of enemies) {
         moveSquare(enemy, dSeconds);
     }
+    enemies = enemies.filter(enemy => !enemy.despawn);
 
     // Draw
     clear(canvas.dynamic);
