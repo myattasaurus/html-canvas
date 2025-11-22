@@ -5,14 +5,19 @@ let sqrt2reciprocal = 1 / sqrt2;
 let gameArea = {};
 let gameState = {};
 
-document.addEventListener('DOMContentLoaded', e => {
+function startHere() {
     initializeGameArea(gameArea);
     initializeCursor(document.getElementById('cursor'));
     initializeGameState(gameState);
 
     // Start animation
     requestAnimationFrame(drawFrame);
-});
+}
+
+function startHitboxHere() {
+    initializeGameArea(gameArea);
+    initializeCursor(document.getElementById('cursor'));
+}
 
 function initializeGameArea(gameArea) {
     let canvases = document.getElementsByTagName('canvas');
