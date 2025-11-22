@@ -1,170 +1,194 @@
 class Canvas {
     constructor(element) {
+        /**
+         * @type {HTMLCanvasElement} element 
+         */
         this.element = element;
-        this.element.width = 800;
-        this.element.height = 600;
-    }
-
-    clear() {
-        this.context.clearRect(0, 0, this.element.width, this.element.height);
-    }
-
-    get context() {
-        return this.element.getContext('2d');
+        /**
+         * @type {CanvasRenderingContext2D}
+         */
+        this.brush = this.element.getContext('2d');
+        /**
+         * @type {string} element 
+         */
+        this.id = element.id;
     }
 }
-
-class Menu {
-    constructor(element) {
-        this.element = element;
-        this.visible = false;
-    }
-
-    hide() {
-        this.element.innerHTML = '';
-    }
-
-    toggle() {
-        this.visible = !this.visible;
-        if (this.visible) {
-            this.show();
-        } else {
-            this.hide();
-        }
-    }
+class ShapeType {
+    static RECTANGLE = 1;
 }
+let square = {
+    type: ShapeType.RECTANGLE,
+    color: 'red',
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0
+};
+let cursor = {
+    visible: true,
+    dragging: false,
+    x: 0,
+    y: 0
+};
 
-class MouseMenu extends Menu {
-
-    constructor(element, canvas) {
-        super(element);
-        canvas.element.addEventListener('mousemove', (e) => this.onMouseMove(e));
-    }
-
-    show() {
-        let menu = '<table>';
-
-        menu += '<tr><td>x</td><td id="x"></td></tr>';
-        menu += '<tr><td>y</td><td id="y"></td></tr>';
-
-        menu += '</table>';
-
-        this.element.innerHTML = menu;
-    }
-
-    onMouseMove(mouseEvent) {
-        if (this.visible) {
-            document.getElementById('x').innerHTML = mouseEvent.offsetX;
-            document.getElementById('y').innerHTML = mouseEvent.offsetY;
-        }
-    }
-}
-
-class RectangleMenu extends Menu {
-
-    constructor(element, rectangle) {
-        super(element);
-
-        this.colorPicker = document.createElement('input');
-        this.colorPicker.type = 'color';
-        this.colorPicker.addEventListener('input', (e) => this.onChange(e));
-
-        this.rectangle = rectangle;
-    }
-
-    show() {
-        document.getElementById('rectangle').append(this.colorPicker);
-    }
-
-    onChange(e) {
-        this.rectangle.color = e.srcElement.value;
-    }
-}
-
-class Square {
-
-    constructor(canvas) {
-        this.color = 'red';
-
-        canvas.element.addEventListener('mousedown', (e) => this.onMouseDown(e));
-        canvas.element.addEventListener('mouseup', (e) => this.onMouseUp(e));
-        canvas.element.addEventListener('mousemove', (e) => this.onMouseMove(e));
-    }
-
-    onMouseDown(mouseEvent) {
-        this.mouseDown = true;
-        this.initialX = mouseEvent.offsetX;
-        this.initialY = mouseEvent.offsetY;
-        this.onMouseMove(mouseEvent);
-    }
-
-    onMouseMove(mouseEvent) {
-        if (this.mouseDown) {
-            this.finalX = mouseEvent.offsetX;
-            this.finalY = mouseEvent.offsetY;
-        }
-    }
-
-    onMouseUp(mouseEvent) {
-        this.onMouseMove(mouseEvent);
-        this.mouseDown = false;
-    }
-
-    draw(context) {
-        context.fillStyle = this.color;
-        context.fillRect(this.left, this.top, this.side, this.side);
-    }
-
-    get left() {
-        if (this.initialX > this.finalX) {
-            return this.initialX - this.side;
-        } else {
-            return this.initialX;
-        }
-    }
-
-    get top() {
-        if (this.initialY > this.finalY) {
-            return this.initialY - this.side;
-        } else {
-            return this.initialY;
-        }
-    }
-
-    get side() {
-        let width = Math.abs(this.initialX - this.finalX);
-        let height = Math.abs(this.initialY - this.finalY);
-        return Math.min(width, height);
-    }
-}
-
-class Screen {
-    constructor() {
-        this.canvas = new Canvas(document.getElementById('canvas'));
-
-        this.mouseMenu = new MouseMenu(document.getElementById('mouse'), this.canvas);
-
-        this.rectangle = new Square(this.canvas);
-        this.rectangleMenu = new RectangleMenu(document.getElementById('rectangle'), this.rectangle);
-
-    }
-
-    tick() {
-        this.canvas.clear();
-
-        this.rectangle.draw(this.canvas.context);
-    }
-}
-
-let screen;
+/**
+ * @type {Array<Canvas>}
+ */
+let canvases = [];
+let staticShapes = [];
 
 function onLoad() {
-    screen = new Screen();
+    // Initialize all canvases
+    for (let cvs of document.getElementsByTagName('canvas')) {
+        canvases[cvs.id] = new Canvas(cvs);
+        cvs.width = 800;
+        cvs.height = 600;
+    }
+    // Canvas behavior
+    {
+        let canvas = canvases['cursor'];
+        canvas.element.addEventListener('mouseenter', e => {
+            cursor.visible = true;
+        });
+        canvas.element.addEventListener('mousedown', e => {
+            // Cursor
+            cursor.dragging = true;
 
-    requestAnimationFrame(tick);
+            // Square
+            square.left = e.offsetX;
+            square.top = e.offsetY;
+        });
+        canvas.element.addEventListener('mousemove', e => {
+            // Cursor
+            {
+                let canvas = canvases['cursor'];
+                clear(canvas);
+                // Update cursor position
+                {
+                    cursor.x = e.offsetX;
+                    cursor.y = e.offsetY;
+                }
+                // Draw cursor
+                if (cursor.visible) {
+                    let brush = canvas.brush;
+                    brush.translate(cursor.x, cursor.y);
+
+                    // Draw the outline
+                    brush.beginPath();
+                    brush.moveTo(0, 0);
+                    brush.lineTo(0, 20);
+                    brush.lineTo(6, 15);
+                    brush.lineTo(14, 15);
+                    brush.closePath();
+
+                    // Green with black outline
+                    brush.fillStyle = 'green';
+                    brush.strokeStyle = 'black';
+                    brush.lineWidth = .625;
+
+                    // Color it in
+                    brush.fill();
+                    brush.stroke();
+
+                    brush.translate(-cursor.x, -cursor.y);
+                }
+            }
+            {
+                /**
+                 * @type {Canvas}
+                 */
+                let canvas = canvases['dynamic'];
+                clear(canvas);
+                if (cursor.dragging) {
+                    // Update the square dimensions
+                    {
+                        let side = Math.max(Math.abs(e.offsetX - square.left), Math.abs(e.offsetY - square.top));
+                        square.width = e.offsetX < square.left ? -side : side;
+                        square.height = e.offsetY < square.top ? -side : side;
+                    }
+                    // Draw the square
+                    {
+                        let brush = canvas.brush;
+                        brush.fillStyle = square.color;
+                        brush.fillRect(square.left, square.top, square.width, square.height);
+                    }
+                } else {
+                    // Determine if the mouse is over any of the static shapes
+                    for (let shape of staticShapes) {
+                        let mouseIsOverShape = shape.left < e.offsetX && e.offsetX < shape.right && shape.top < e.offsetY && e.offsetY < shape.bottom;
+                        if (mouseIsOverShape) {
+                            let brush = canvas.brush;
+                            // Draw an outline over the shape
+                            {
+                                brush.strokeStyle = 'black';
+                                brush.strokeRect(shape.left, shape.top, shape.width, shape.height);
+                            }
+
+                            // Draw draggable corners
+                            {
+
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        canvas.element.addEventListener('mouseup', e => {
+            // Cursor
+            cursor.dragging = false;
+
+            // Shapes
+            {
+                // Normalize the square
+                {
+                    if (square.width > 0) {
+                        square.right = square.left + square.width;
+                    } else {
+                        square.right = square.left;
+                        square.left = square.left + square.width;
+                        square.width = -square.width;
+                    }
+                    if (square.height > 0) {
+                        square.bottom = square.top + square.height;
+                    } else {
+                        square.bottom = square.top;
+                        square.top = square.top + square.height;
+                        square.height = -square.height;
+                    }
+                }
+
+                // Update shapes
+                staticShapes.push(square);
+
+                // Draw Shapes
+                {
+                    let canvas = canvases['static'];
+                    let brush = canvas.brush;
+                    for (let shape of staticShapes) {
+                        brush.fillStyle = shape.color;
+                        brush.fillRect(shape.left, shape.top, shape.width, shape.height);
+                    }
+                }
+            }
+
+            // Square
+            square = {
+                type: ShapeType.RECTANGLE,
+                color: 'red',
+            };
+        });
+        canvas.element.addEventListener('mouseleave', e => {
+            // Cursor
+            cursor.visible = false;
+            clear(canvas);
+        });
+    }
 }
 
-function tick(timestamp) {
-    screen.tick();
-    requestAnimationFrame(tick);
+/**
+ * @param {Canvas} canvas 
+ */
+function clear(canvas) {
+    canvas.brush.clearRect(0, 0, canvas.element.width, canvas.element.height);
 }
