@@ -22,6 +22,7 @@ let gameArea;
 let cursor;
 let square;
 let enemies;
+let spawnTimestamp = Date.now() - 5000;
 
 /**
  * @type {Array<Canvas>}
@@ -126,80 +127,8 @@ function onLoad() {
             clear(canvas.cursor);
         });
     }
-    // Spawn a square
     enemies = [];
-    {
-        let speed = 80;
-        let width = randomWidth(30, 71);
-        let spawnRect = {
-            width: gameArea.width + width * sqrt2,
-            height: gameArea.height + width * sqrt2
-        };
-        let spawnLength = Math.random() * (2 * spawnRect.width + 2 * spawnRect.height);
-        let spawnPoint;
-        if (spawnLength <= spawnRect.width) {
-            // Spawn along the top
-            spawnPoint = {
-                x: spawnLength,
-                y: -width * sqrt2reciprocal,
-                dx: 0,
-                dy: speed
-            };
-        } else if (spawnLength <= spawnRect.width + spawnRect.height) {
-            // Spawn on the right
-            spawnPoint = {
-                x: gameArea.width + width * sqrt2reciprocal,
-                y: spawnLength - spawnRect.width,
-                dx: -speed,
-                dy: 0
-            };
-        } else if (spawnLength <= 2 * spawnRect.width + spawnRect.height) {
-            // Spawn on the bottom
-            spawnPoint = {
-                x: spawnLength - spawnRect.width - spawnRect.height,
-                y: gameArea.height + width * sqrt2reciprocal,
-                dx: 0,
-                dy: -speed
-            };
-        } else {
-            // Spawn on the left
-            spawnPoint = {
-                x: -width * sqrt2reciprocal,
-                y: spawnLength - 2 * spawnRect.width - spawnRect.height,
-                dx: speed,
-                dy: 0
-            };
-        }
-        console.log(spawnPoint);
-        square = {
-            color: 'red',
-            width: width,
-            x: spawnPoint.x,
-            y: spawnPoint.y,
-            theta: 0,
-            dx: spawnPoint.dx, // pixels per second
-            dy: spawnPoint.dy, // pixels per second
-            dTheta: 0.4,
-            despawn: false,
-        };
-        updateSquare(square);
-        enemies.push(square);
 
-        width = randomWidth(30, 71);;
-        square = {
-            color: 'red',
-            width: width,
-            x: 700,
-            y: -width * sqrt2reciprocal,
-            theta: 0,
-            dx: 0, // pixels per second
-            dy: 80, // pixels per second
-            dTheta: -0.4,
-            despawn: false,
-        };
-        updateSquare(square);
-        enemies.push(square);
-    }
     // Start animation
     previousFrameTimestamp = Date.now();
     requestAnimationFrame(drawFrame);
@@ -292,22 +221,85 @@ function drawCursor(brush, cursor) {
     }
 }
 
+function randomInt(minInclusive, maxExclusive) {
+    return Math.floor(Math.random() * (maxExclusive - minInclusive + 2)) + minInclusive;
+}
+
 /**
  * Provides a random number in the range. The number will be even.
  * @param {number} minInclusive 
- * @param {number} maxNotInclusive 
+ * @param {number} maxExclusive 
  * @returns 
  */
-function randomWidth(minInclusive, maxNotInclusive) {
-    let randomInt = Math.floor(Math.random() * (maxNotInclusive - minInclusive + 2)) + minInclusive;
-    randomInt -= randomInt % 2;
-    return randomInt;
+function randomWidth(minInclusive, maxExclusive) {
+    let randomNum = randomInt(minInclusive, maxExclusive)
+    randomNum -= randomNum % 2;
+    return randomNum;
 }
 
 function drawFrame() {
     let frameTimestamp = Date.now();
     let dMillis = frameTimestamp - previousFrameTimestamp;
     let dSeconds = dMillis / 1000;
+
+    // Spawn a square every half second
+    if (spawnTimestamp + 50 < frameTimestamp) {
+        spawnTimestamp = frameTimestamp;
+        let speed = randomInt(40, 81);
+        let width = randomWidth(30, 101);
+        let spawnRect = {
+            width: gameArea.width + width * sqrt2,
+            height: gameArea.height + width * sqrt2
+        };
+        let spawnLength = Math.random() * (2 * spawnRect.width + 2 * spawnRect.height);
+        let spawnPoint;
+        if (spawnLength <= spawnRect.width) {
+            // Spawn along the top
+            spawnPoint = {
+                x: spawnLength,
+                y: -width * sqrt2reciprocal,
+                dx: 0,
+                dy: speed
+            };
+        } else if (spawnLength <= spawnRect.width + spawnRect.height) {
+            // Spawn on the right
+            spawnPoint = {
+                x: gameArea.width + width * sqrt2reciprocal,
+                y: spawnLength - spawnRect.width,
+                dx: -speed,
+                dy: 0
+            };
+        } else if (spawnLength <= 2 * spawnRect.width + spawnRect.height) {
+            // Spawn on the bottom
+            spawnPoint = {
+                x: spawnLength - spawnRect.width - spawnRect.height,
+                y: gameArea.height + width * sqrt2reciprocal,
+                dx: 0,
+                dy: -speed
+            };
+        } else {
+            // Spawn on the left
+            spawnPoint = {
+                x: -width * sqrt2reciprocal,
+                y: spawnLength - 2 * spawnRect.width - spawnRect.height,
+                dx: speed,
+                dy: 0
+            };
+        }
+        let square = {
+            color: `rgb(${randomInt(0, 256)},${randomInt(0, 256)},${randomInt(0, 256)})`,
+            width: width,
+            x: spawnPoint.x,
+            y: spawnPoint.y,
+            theta: 0,
+            dx: spawnPoint.dx, // pixels per second
+            dy: spawnPoint.dy, // pixels per second
+            dTheta: 0.4,
+            despawn: false,
+        };
+        updateSquare(square);
+        enemies.push(square);
+    }
 
     // Update
     for (let enemy of enemies) {
