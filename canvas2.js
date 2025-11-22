@@ -132,7 +132,6 @@ function onLoad() {
             dy: 10, // pixels per second
             dTheta: 0.3,
         };
-        normalizeSquare(square);
         updateSquare(square);
         enemies.push(square);
 
@@ -147,7 +146,6 @@ function onLoad() {
             dy: 40, // pixels per second
             dTheta: -0.5,
         };
-        normalizeSquare(square);
         updateSquare(square);
         enemies.push(square);
     }
@@ -173,12 +171,8 @@ function moveSquare(square, dSeconds) {
 function updateSquare(square, x = square.x, y = square.y) {
     square.x = x;
     square.y = y;
-    square.left = x - square.halfWidth;
-    square.top = y - square.halfWidth;
-}
-
-function normalizeSquare(square) {
-    square.halfWidth = square.width / 2;
+    square.left = x - square.width / 2;
+    square.top = y - square.width / 2;
 }
 
 function drawSquare(brush, square) {
@@ -191,14 +185,10 @@ let yOperation = [-1, 1, -1, 1];
 function normalizeCursor(cursor) {
     cursor.innerSquare.width = cursor.outerSquare.width - cursor.centerSquare.width;
 
-    normalizeSquare(cursor.outerSquare);
-    normalizeSquare(cursor.innerSquare);
-    normalizeSquare(cursor.centerSquare);
     for (let i = 0; i < 4; i++) {
         let cornerSquare = cursor.cornerSquares[i];
-        normalizeSquare(cornerSquare);
-        cornerSquare.offsetX = xOperation[i] * cursor.outerSquare.halfWidth - xOperation[i] * cornerSquare.halfWidth;
-        cornerSquare.offsetY = yOperation[i] * cursor.outerSquare.halfWidth - yOperation[i] * cornerSquare.halfWidth;
+        cornerSquare.offsetX = xOperation[i] * cursor.outerSquare.width / 2 - xOperation[i] * cornerSquare.width / 2;
+        cornerSquare.offsetY = yOperation[i] * cursor.outerSquare.width / 2 - yOperation[i] * cornerSquare.width / 2;
     }
 }
 
