@@ -20,14 +20,13 @@ let sqrt2 = Math.sqrt(2);
 let sqrt2reciprocal = 1 / sqrt2;
 let gameArea;
 let cursor;
-let enemies;
 let spawnTimestamp = Date.now() - 5000;
 
 /**
  * @type {Array<Canvas>}
  */
 let canvas;
-let previousFrameTimestamp;
+let gameState;
 
 function onLoad() {
     // Initialize all canvases
@@ -45,7 +44,18 @@ function onLoad() {
     window.addEventListener('resize', e => {
         canvas.static.element.width = canvas.dynamic.element.width = canvas.cursor.element.width = gameArea.width = window.innerWidth;
         canvas.static.element.height = canvas.dynamic.element.height = canvas.cursor.element.height = gameArea.height = window.innerHeight;
-    })
+        gameArea.x = gameArea.width / 2;
+        gameArea.y = gameArea.height / 2;
+    });
+    document.addEventListener('visibilitychange', e => {
+        if (!document.hidden) {
+            gameState = JSON.parse(localStorage.getItem('gameState'));
+            gameState.previousFrameTimestamp = Date.now();
+            requestAnimationFrame(drawFrame);
+        } else {
+            localStorage.setItem('gameState', JSON.stringify(gameState));
+        }
+    });
     // Initialize cursor
     {
         let bgColor = 'rgba(47, 71, 77, 0.2)';
@@ -126,10 +136,12 @@ function onLoad() {
             clear(canvas.cursor);
         });
     }
-    enemies = [];
 
+    gameState = {
+        enemies: [],
+        previousFrameTimestamp: Date.now()
+    };
     // Start animation
-    previousFrameTimestamp = Date.now();
     requestAnimationFrame(drawFrame);
 }
 
@@ -238,7 +250,7 @@ function randomWidth(minInclusive, maxExclusive) {
 
 function drawFrame() {
     let frameTimestamp = Date.now();
-    let dMillis = frameTimestamp - previousFrameTimestamp;
+    let dMillis = frameTimestamp - gameState.previousFrameTimestamp;
     let dSeconds = dMillis / 1000;
 
     // Spawn a square at some frequency
@@ -301,18 +313,18 @@ function drawFrame() {
             despawn: false,
         };
         updateSquare(square);
-        enemies.push(square);
+        gameState.enemies.push(square);
     }
 
     // Update
-    for (let enemy of enemies) {
+    for (let enemy of gameState.enemies) {
         moveSquare(enemy, dSeconds);
     }
-    enemies = enemies.filter(enemy => !enemy.despawn);
+    gameState.enemies = gameState.enemies.filter(enemy => !enemy.despawn);
 
     // Draw
     clear(canvas.dynamic);
-    for (let enemy of enemies) {
+    for (let enemy of gameState.enemies) {
         let brush = canvas.dynamic.brush;
         brush.save();
 
@@ -327,6 +339,8 @@ function drawFrame() {
     }
 
     // Loop again
-    previousFrameTimestamp = frameTimestamp;
-    requestAnimationFrame(drawFrame);
+    gameState.previousFrameTimestamp = frameTimestamp;
+    if (!document.hidden) {
+        requestAnimationFrame(drawFrame);
+    }
 }
