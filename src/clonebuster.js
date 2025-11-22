@@ -15,8 +15,46 @@ function startHere() {
 }
 
 function startHitboxHere() {
+    let canvas = document.getElementById('cursor');
     initializeGameArea(gameArea);
-    initializeCursor(document.getElementById('cursor'));
+    let cursor = initializeCursor(canvas);
+
+    let square = {
+        color: 'red',
+        x: gameArea.x,
+        y: gameArea.y,
+        width: 200,
+    }
+    atomicSquare(square);
+    window.addEventListener('resize', e => {
+        square.x = window.innerWidth / 2;
+        square.y = window.innerHeight / 2;
+        atomicSquare(square);
+    });
+    canvas.addEventListener('mousemove', e => {
+        x = e.offsetX;
+        y = e.offsetY;
+        square.color = squaresIntersect(cursor, square)
+            ? 'green' : 'red';
+        atomicSquare(square);
+    });
+}
+function squaresIntersect(a, b) {
+    let dx = Math.abs(a.x - b.x);
+    let dy = Math.abs(a.y - b.y);
+
+    let combinedHalfWidth = a.width / 2 + b.width / 2;
+    let combinedHalfHeight = a.width / 2 + b.width / 2; // also squares
+
+    return dx <= combinedHalfWidth && dy <= combinedHalfHeight;
+}
+
+function atomicSquare(square) {
+    let canvas = document.getElementById('dynamic');
+    let brush = canvas.getContext('2d');
+    updateSquare(square);
+    clear(canvas, brush);
+    drawSquare(brush, square);
 }
 
 function initializeGameArea(gameArea) {
@@ -170,6 +208,7 @@ function initializeCursor(canvas) {
         }
         normalizeCursor(cursor);
     }
+    return cursor;
 }
 
 let xOperation = [-1, -1, 1, 1];
